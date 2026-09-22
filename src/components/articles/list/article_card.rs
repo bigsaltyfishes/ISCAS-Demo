@@ -1,7 +1,10 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
 
-use crate::{app::TranslationContext, models::SearchableArticle};
+use crate::{
+    app::{TranslationContext, SITE_CONFIGURATION},
+    models::SearchableArticle,
+};
 
 fn category_icon(category: &str) -> &'static str {
     match category.to_ascii_lowercase().as_str() {
@@ -11,8 +14,18 @@ fn category_icon(category: &str) -> &'static str {
     }
 }
 
+fn tag_href(tag: &str) -> String {
+    format!(
+        "/articles?tag={}",
+        tag.replace('&', "%26").replace(' ', "%20")
+    )
+}
+
 #[component]
-pub fn ArticleCard(article: SearchableArticle) -> impl IntoView {
+pub fn ArticleCard(
+    article: SearchableArticle,
+    #[prop(default = true)] show_description: bool,
+) -> impl IntoView {
     let translator = expect_context::<TranslationContext>();
     let category = article
         .article
@@ -20,36 +33,79 @@ pub fn ArticleCard(article: SearchableArticle) -> impl IntoView {
         .clone()
         .unwrap_or_else(|| "Notes".to_string());
     let date = article.article.date.clone().unwrap_or_default();
+    let title = article.article.title.clone();
     let first_tag = article.article.tags.first().cloned();
     let icon = category_icon(&category);
+    let article_path = format!("/articles/{}", article.id);
+    let first_tag_href = first_tag.as_deref().map(tag_href);
+    let has_first_tag = first_tag.is_some();
+    let category_label = first_tag.clone().unwrap_or_else(|| category.clone());
+    let secondary_category = first_tag
+        .as_ref()
+        .filter(|tag| *tag != &category)
+        .map(|_| category.clone());
+    let cover_url = SITE_CONFIGURATION.get().and_then(|site| {
+        article
+            .article
+            .cover
+            .as_ref()
+            .map(|cover| site.article_asset_url(&article.id, cover))
+    });
+    let cover_title = title.clone();
 
     view! {
         <li class="article-card article-row">
-            <A
-                href=format!("/articles/{}", article.id)
-                attr:class="article-card-link"
-            >
-                <div class="article-card-thumb" aria-hidden="true">
-                    <span class="material-symbols-outlined">{icon}</span>
-                </div>
+            <div class="article-card-link">
+                <A href=article_path.clone() attr:class="article-card-thumb-link">
+                    {cover_url
+                        .map(|url| {
+                            let alt = cover_title.clone();
+                            view! { <div class="article-card-thumb"><img src=url alt=alt /></div> }
+                                .into_any()
+                        })
+                        .unwrap_or_else(|| {
+                            view! {
+                                <div class="article-card-thumb" aria-hidden="true">
+                                    <span class="material-symbols-outlined">{icon}</span>
+                                </div>
+                            }
+                            .into_any()
+                        })}
+                </A>
                 <div class="article-card-body">
                     <div class="article-card-meta">
-                        <span class="article-card-category">{category}</span>
-                        {first_tag.map(|tag| view! { <span class="article-card-tag">{format!("#{tag}")}</span> })}
+                        {first_tag_href.clone().map(|href| {
+                            let tag = first_tag.clone().unwrap_or_default();
+                            view! {
+                                <A href=href attr:class="article-card-category article-card-tag-link">
+                                    {format!("#{tag}")}
+                                </A>
+                            }
+                        })}
+                        {secondary_category.map(|category| view! {
+                            <span class="article-card-tag">{category}</span>
+                        })}
+                        {(!has_first_tag).then(|| view! {
+                            <span class="article-card-category">{category_label.clone()}</span>
+                        })}
                     </div>
-                    <h2 class="article-card-title">{article.article.title.clone()}</h2>
-                    <p class="article-card-description">{article.article.description.clone()}</p>
-                    <div class="article-card-extra">
-                        <span>{format!(
-                            "{} {}",
-                            article.article.tags.len(),
-                            translator.translate("tags")
-                        )}</span>
-                        <span class="article-card-arrow" aria-hidden="true">"↗"</span>
-                    </div>
+                    <A href=article_path.clone() attr:class="article-card-primary-link">
+                        <h2 class="article-card-title">{title.clone()}</h2>
+                        {show_description.then(|| view! {
+                            <p class="article-card-description">{article.article.description.clone()}</p>
+                        })}
+                        <div class="article-card-extra">
+                            <span>{format!(
+                                "{} {}",
+                                article.article.tags.len(),
+                                translator.translate("tags")
+                            )}</span>
+                            <span class="article-card-arrow" aria-hidden="true">"↗"</span>
+                        </div>
+                    </A>
                 </div>
                 <time class="article-card-date">{date}</time>
-            </A>
+            </div>
         </li>
     }
 }

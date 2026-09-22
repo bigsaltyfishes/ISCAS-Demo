@@ -28,6 +28,15 @@
     padding: 24px 0;
   }
 
+  .article-card-thumb-link {
+    position: relative;
+    z-index: 1;
+  }
+
+  .article-card-primary-link {
+    display: block;
+  }
+
   .article-card-link::after {
     position: absolute;
     z-index: -1;
@@ -68,6 +77,12 @@
     transition: transform 200ms ease;
   }
 
+  .article-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   .article-card-link:hover .article-card-thumb .material-symbols-outlined,
   .article-card-link:focus-visible .article-card-thumb .material-symbols-outlined {
     transform: scale(1.08) rotate(-4deg);
@@ -91,6 +106,16 @@
     color: rgb(var(--ref-color-primary, var(--fallback-primary)));
     font-weight: 700;
     text-transform: uppercase;
+  }
+
+  .article-card-tag-link {
+    text-decoration: none;
+  }
+
+  .article-card-tag-link:hover,
+  .article-card-tag-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   .article-card-tag {

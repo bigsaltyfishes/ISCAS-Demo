@@ -51,6 +51,7 @@
 @import './components/progress-bar.css';
 @import './components/error-page.css';
 @import './components/home.css';
+@import './components/directives.css';
 @import './components/articles-list.css';
 @import './components/articles-title.css';
 @import './components/articles-pagination.css';

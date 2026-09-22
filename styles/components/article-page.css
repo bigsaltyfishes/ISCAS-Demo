@@ -243,6 +243,7 @@
     display: grid;
     grid-template-columns: 180px minmax(0, 620px);
     gap: 42px;
+    align-items: start;
     padding: 28px 0;
     border-top: 1px solid color-mix(in srgb, rgb(var(--ref-color-outline, var(--fallback-outline))) 42%, transparent);
   }
@@ -253,6 +254,11 @@
     font: 700 0.72rem var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+
+  .about-section > :not(h2) {
+    grid-column: 2;
+    min-width: 0;
   }
 
   .about-section p {
@@ -371,6 +377,10 @@
       grid-template-columns: 1fr;
       gap: 10px;
       padding: 22px 0;
+    }
+
+    .about-section > :not(h2) {
+      grid-column: 1;
     }
 
     .article-loading {

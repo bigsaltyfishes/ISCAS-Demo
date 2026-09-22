@@ -45,6 +45,26 @@
     text-transform: uppercase;
   }
 
+  .markdown-heading-kicker {
+    display: block;
+    margin: 2.5em 0 0.5em;
+    color: rgb(var(--ref-color-primary, var(--fallback-primary)));
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  .markdown-body .markdown-heading-kicker + h2 {
+    margin-top: 0.75rem;
+  }
+
+  .markdown-body .markdown-heading-kicker + h3 {
+    margin-top: 0.5rem;
+  }
+
   .display-title,
   .page-title,
   .article-title {
@@ -64,6 +84,7 @@
     border: 1px solid transparent;
     border-radius: 999px;
     font-weight: 650;
+    text-decoration: none;
     transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
   }
 
@@ -72,12 +93,12 @@
     transform: translateY(-1px);
   }
 
-  .btn-tonal {
+  .btn.btn-tonal {
     color: rgb(var(--ref-color-on-secondary-container, var(--fallback-on-secondary-container)));
     background: color-mix(in srgb, rgb(var(--ref-color-secondary-container, var(--fallback-secondary-container))) 86%, transparent);
   }
 
-  .btn-outlined {
+  .btn.btn-outlined {
     color: rgb(var(--ref-color-on-surface, var(--fallback-on-surface)));
     border-color: color-mix(in srgb, rgb(var(--ref-color-outline, var(--fallback-outline))) 70%, transparent);
     background: color-mix(in srgb, rgb(var(--ref-color-surface, var(--fallback-surface))) 22%, transparent);
@@ -145,6 +166,10 @@
     text-decoration: underline;
     text-decoration-color: color-mix(in srgb, rgb(var(--ref-color-primary, var(--fallback-primary))) 48%, transparent);
     text-underline-offset: 3px;
+  }
+
+  .markdown-body a.btn {
+    text-decoration: none;
   }
 
   .markdown-body ul,

@@ -1,125 +1,103 @@
-use leptos::prelude::*;
-use leptos_meta::Title;
-use leptos_router::components::A;
+use gloo_timers::future::TimeoutFuture;
+use leptos::{prelude::*, task::spawn_local};
+use leptos_meta::{Meta, Title};
 
 use crate::{
     app::{TranslationContext, SITE_CONFIGURATION},
-    components::{articles::list::ArticleCard, progress_bar::stop_progress_bar},
-    models::ArticleIndex,
+    components::{
+        error_page::ErrorPage,
+        progress_bar::stop_progress_bar,
+        rich_markdown::{MarkdownRenderMode, RichMarkdownRenderer},
+    },
+    models::Article,
 };
 
+/// The home page is intentionally a projection of the special `home` article.
+/// Its content, guide links, data directives, and prose live in Markdown/CSV;
+/// this page only owns loading, metadata, animation, and failure handling.
 #[component]
 pub fn HomePage() -> impl IntoView {
     let site = SITE_CONFIGURATION
         .get()
-        .expect("Site configuration should be loaded by AppLayout");
+        .expect("Site configuration must be initialized before HomePage");
     let translator = expect_context::<TranslationContext>();
     let site_name = site.long();
-    let author_github = site.author.github.clone();
-    let author_email = site.author.email.clone();
-    let welcome_title = site.home.welcome_title.clone();
-    let welcome_text = site.home.welcome_text.clone();
+    let article_id = site.home.article_id.clone();
+    let article_id_for_resource = article_id.clone();
+    let site_for_article = site.clone();
+    let article_result = LocalResource::new(move || {
+        let article_id = article_id_for_resource.clone();
+        let site = site_for_article.clone();
+        async move { Article::fetch(&article_id, &site).await }
+    });
 
-    let site_for_articles = site.clone();
-    let recent_articles = LocalResource::new(move || {
-        let site = site_for_articles.clone();
-        async move {
-            ArticleIndex::fetch(&site)
-                .await
-                .map(|index| index.to_search_index())
+    let content_ready = RwSignal::new(false);
+    let animation_class = RwSignal::new("page-content".to_string());
+    Effect::new(move |_| {
+        if content_ready.get() {
+            animation_class.set("page-content".to_string());
+            spawn_local(async move {
+                TimeoutFuture::new(10).await;
+                animation_class.set("page-content animate-fade-in-up".to_string());
+            });
+            stop_progress_bar();
         }
     });
 
-    let animation_class = RwSignal::new("page-content".to_string());
-    Effect::new(move |_| {
-        animation_class.set("page-content animate-fade-in-up".to_string());
-        stop_progress_bar();
-    });
-
     view! {
-        <Title text=format!("{} - {site_name}", translator.translate("Home")) />
-        <div class=move || format!("page-container {}", animation_class.get())>
-            <section class="shell home-hero">
-                <div class="home-hero-inner">
-                    <span class="kicker">{translator.translate("Personal notes · code · life")}</span>
-                    <h1 class="display-title">
-                        {welcome_title}
-                        <span class="display-title-subtitle">"Molyuu Blog."</span>
-                    </h1>
-                    <div class="home-copy">
-                        {welcome_text
-                            .into_iter()
-                            .map(|text| view! { <p>{text}</p> })
-                            .collect_view()}
-                    </div>
-                    <div class="hero-actions">
-                        <A href="/articles" attr:class="btn btn-tonal">
-                            <span class="material-symbols-outlined" aria-hidden="true">"menu_book"</span>
-                            {translator.translate("Browse articles")}
-                        </A>
-                        <A href="/about" attr:class="btn btn-outlined">
-                            <span class="material-symbols-outlined" aria-hidden="true">"info"</span>
-                            {translator.translate("About this site")}
-                        </A>
-                    </div>
-                    <div class="socials" attr:aria-label=translator.translate("Social links")>
-                        <a
-                            class="social-link"
-                            href=format!("https://github.com/{author_github}")
-                            attr:aria-label=translator.translate("GitHub")
-                        >
-                            <span class="material-symbols-outlined" aria-hidden="true">"code"</span>
-                        </a>
-                        <a
-                            class="social-link"
-                            href=format!("mailto:{author_email}")
-                            attr:aria-label=translator.translate("Email")
-                        >
-                            <span class="material-symbols-outlined" aria-hidden="true">"mail"</span>
-                        </a>
-                    </div>
-                </div>
-            </section>
-
-            <div class="shell layered-divider" aria-hidden="true"></div>
-
-            <section class="shell recent">
-                <div class="section-head">
-                    <div>
-                        <span class="kicker">{translator.translate("Latest notes")}</span>
-                        <h2>{translator.translate("Recent posts")}</h2>
-                    </div>
-                    <A href="/articles" attr:class="section-link">{translator.translate("All articles →")}</A>
-                </div>
-                <Suspense fallback=move || {
-                    view! {
-                        <div class="article-list-skeleton" attr:aria-label=translator.translate("Loading recent articles")>
-                            <span></span><span></span><span></span>
-                        </div>
+        <Title text=move || {
+            article_result.with(|result| {
+                result.as_ref().map_or(translator.translate("Loading..."), |result| {
+                    result.as_ref().map_or(translator.translate("Error loading home"), |(article, _)| {
+                        format!("{} - {}", article.title, site_name)
+                    })
+                })
+            })
+        } />
+        <Meta name="description" content=move || {
+            article_result.with(|result| {
+                result.as_ref().map_or(String::new(), |result| {
+                    result
+                        .as_ref()
+                        .map(|(article, _)| article.description.chars().take(160).collect())
+                        .unwrap_or_default()
+                })
+            })
+        } />
+        <Suspense fallback=move || view! {
+            <div class="article-loading" attr:aria-label=translator.translate("Loading home page")></div>
+        }>
+            {move || {
+                article_result.with(|result| match result {
+                    Some(Ok((_, markdown_content))) => {
+                        content_ready.set(true);
+                        view! {
+                            <div class=move || format!("page-container home-page {}", animation_class.get())>
+                                <RichMarkdownRenderer
+                                    article_id=article_id.clone()
+                                    content=markdown_content.clone()
+                                    mode=MarkdownRenderMode::Home
+                                />
+                            </div>
+                        }
+                            .into_any()
                     }
-                }>
-                    {move || {
-                        recent_articles.get().map(|result| match result {
-                            Ok(index) => {
-                                let articles = index.articles.iter().take(3).cloned().collect::<Vec<_>>();
-                                view! {
-                                    <ul class="articles-list article-list-home">
-                                        {articles
-                                            .into_iter()
-                                            .map(|article| view! { <ArticleCard article=article /> })
-                                            .collect_view()}
-                                    </ul>
-                                }
-                                    .into_any()
-                            }
-                            Err(_) => view! {
-                                <p class="muted article-load-note">{translator.translate("Recent posts are taking a little longer to arrive.")}</p>
-                            }
-                                .into_any(),
-                        })
-                    }}
-                </Suspense>
-            </section>
-        </div>
+                    Some(Err(error)) => view! {
+                        <div class="page-container">
+                            <ErrorPage
+                                title=translator.translate("Home Guide Unavailable")
+                                message=translator.translate("The ISCAS Guide could not be loaded. Please try again later.")
+                                error_details=error.clone()
+                                error_type="network".to_string()
+                                show_navigation=false
+                            />
+                        </div>
+                    }.into_any(),
+                    None => view! {
+                        <div class="article-loading" attr:aria-label=translator.translate("Loading home page")></div>
+                    }.into_any(),
+                })
+            }}
+        </Suspense>
     }
 }

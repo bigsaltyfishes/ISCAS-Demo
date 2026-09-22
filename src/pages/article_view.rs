@@ -6,9 +6,15 @@ use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::{
     app::{TranslationContext, SITE_CONFIGURATION},
-    components::{error_page::ErrorPage, layout::ProgressContext, progress_bar::stop_progress_bar},
+    components::{
+        error_page::ErrorPage,
+        layout::ProgressContext,
+        progress_bar::stop_progress_bar,
+        rich_markdown::{MarkdownRenderMode, RichMarkdownRenderer},
+    },
+    markdown::MarkdownDocument,
     models::Article,
-    utils::{MarkdownArticle, MarkdownHeading},
+    utils::MarkdownHeading,
 };
 
 #[component]
@@ -76,9 +82,7 @@ pub fn ArticlePage() -> impl IntoView {
                 article_result.with(|result| match result {
                     Some(Ok((article, markdown_content))) => {
                         let article_id = id();
-                        let markdown = MarkdownArticle::new(markdown_content.clone(), article_id.clone());
-                        let headings = markdown.headings();
-                        let html_output: String = markdown.into();
+                        let headings = MarkdownDocument::parse(&markdown_content).headings;
                         let cover_url = article
                             .cover
                             .as_ref()
@@ -144,7 +148,13 @@ pub fn ArticlePage() -> impl IntoView {
                                     </div>
 
                                     <div class="article-layout">
-                                        <div class="markdown-container" inner_html=html_output></div>
+                                        <div class="markdown-container">
+                                            <RichMarkdownRenderer
+                                                article_id=article_id.clone()
+                                                content=markdown_content.clone()
+                                                mode=MarkdownRenderMode::Article
+                                            />
+                                        </div>
                                         <ArticleToc
                                             headings=headings.clone()
                                             article_path=article_path

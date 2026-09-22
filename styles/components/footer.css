@@ -24,6 +24,13 @@
     font: 0.72rem/1.5 var(--font-mono);
   }
 
+  .footer-legal {
+    flex-basis: 100%;
+    margin-top: 2px;
+    color: color-mix(in srgb, currentColor 82%, transparent);
+    font: 0.68rem/1.65 var(--font-mono);
+  }
+
   .footer a {
     color: rgb(var(--ref-color-primary, var(--fallback-primary)));
     text-decoration: underline;
@@ -40,6 +47,10 @@
     .footer-content {
       align-items: flex-start;
       flex-direction: column;
+    }
+
+    .footer-legal {
+      margin-top: 0;
     }
   }
 }

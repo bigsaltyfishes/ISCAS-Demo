@@ -12,13 +12,30 @@ use crate::{
     models::{ArticleIndex, ArticleSearchIndex, SearchCriteria},
 };
 
+fn initial_search_query() -> String {
+    let Some(window) = web_sys::window() else {
+        return String::new();
+    };
+    let Ok(search) = window.location().search() else {
+        return String::new();
+    };
+    let Some(tag) = web_sys::UrlSearchParams::new_with_str(&search)
+        .ok()
+        .and_then(|params| params.get("tag"))
+        .filter(|tag| !tag.trim().is_empty())
+    else {
+        return String::new();
+    };
+    format!("tag:{tag}")
+}
+
 #[component]
 pub fn ArticlesListPage() -> impl IntoView {
     let site = SITE_CONFIGURATION
         .get()
         .expect("Site configuration not initialized");
     let translator = expect_context::<TranslationContext>();
-    let search_query = RwSignal::new(String::new());
+    let search_query = RwSignal::new(initial_search_query());
     let search_expanded = RwSignal::new(false);
     let current_page = RwSignal::new(0usize);
     let active_category = RwSignal::new(String::new());
@@ -205,7 +222,7 @@ fn ArticlesListPageContent(
                             current_page.set(0);
                         }
                     >
-                        {translator.translate("All notes")}
+                        {translator.translate("All articles")}
                     </button>
                     {categories
                         .into_iter()

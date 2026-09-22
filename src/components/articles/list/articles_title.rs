@@ -91,7 +91,7 @@ pub fn ArticleTitleBar(
             <div>
                 <span class="kicker">{translator.translate("Archive")}</span>
                 <h1 class="page-title">{translator.translate("Articles")}</h1>
-                <p>{translator.translate("A small, searchable shelf of notes about code, tools and the things around them.")}</p>
+                <p>{translator.translate("Search the ISCAS Guide by category, tag, and experience.")}</p>
             </div>
             <button
                 type="button"

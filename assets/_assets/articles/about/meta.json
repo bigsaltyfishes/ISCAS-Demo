@@ -1,7 +1,7 @@
 {
-    "title": "Molyuu Blog",
-    "description": "A small personal corner for technology, notes and everyday discoveries — still recognizably the original Molyuu Blog, just calmer and easier to read.",
+    "title": "关于 ISCAS Guide",
+    "description": "一份由历届考生及热心网友公益维护的中国科学院软件所考研报考指南。",
     "category": "About",
-    "tags": ["about", "site", "rust"],
-    "date": "2024-01-01"
+    "tags": ["about", "iscas", "guide"],
+    "date": "2026-09-22"
 }

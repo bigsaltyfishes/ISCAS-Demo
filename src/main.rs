@@ -5,6 +5,7 @@ use leptos::prelude::*;
 mod app;
 mod bindgen;
 mod components;
+mod markdown;
 mod models;
 mod pages;
 mod router;

@@ -155,10 +155,25 @@ pub struct AuthorOptions {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct CopyrightOptions {
+    pub holder: String,
+    pub notice: String,
+    pub license: String,
+    pub license_url: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct HomeOptions {
+    #[serde(default = "default_home_article_id")]
+    pub article_id: String,
+    #[serde(default)]
     pub welcome_title: String,
     #[serde(default)]
     pub welcome_text: Vec<String>,
+}
+
+fn default_home_article_id() -> String {
+    "home".to_string()
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -175,6 +190,7 @@ pub struct Site {
     #[serde(default)]
     pub theme: Option<ThemeOptions>,
     pub author: AuthorOptions,
+    pub copyright: CopyrightOptions,
     pub home: HomeOptions,
     pub articles: ArticlesOptions,
 }
@@ -217,9 +233,21 @@ impl Site {
     }
 
     pub fn article_asset_url(&self, id: &str, path: &str) -> String {
+        self.resolve_article_asset(id, path)
+    }
+
+    /// Resolve the `$ASSETS` placeholder used by Markdown and directives.
+    /// Keeping this in the typed site contract prevents each renderer from
+    /// inventing a different GitHub Pages/sub-path URL rule.
+    pub fn resolve_article_asset(&self, id: &str, path: &str) -> String {
+        let relative_path = path
+            .split_once("$ASSETS/")
+            .map(|(_, suffix)| suffix)
+            .unwrap_or(path)
+            .trim_start_matches('/');
         public_url(&format!(
             "{}/{}/{}/{}",
-            self.assets.directory, self.assets.articles, id, path
+            self.assets.directory, self.assets.articles, id, relative_path
         ))
     }
 }
@@ -317,7 +345,9 @@ mod tests {
             .expect("site.json should include theme")
             .background_focus
             .expect("site.json should include background focus");
-        assert_eq!(focus.rectangle.x, 920);
+        assert_eq!(focus.rectangle.x, 460);
         assert_eq!(focus.overflow, BackgroundFocusOverflow::Center);
+        assert_eq!(site.copyright.holder, "历届考生及热心网友");
+        assert_eq!(site.copyright.license, "CC BY-NC-SA 4.0");
     }
 }

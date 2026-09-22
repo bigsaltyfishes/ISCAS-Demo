@@ -65,21 +65,36 @@ impl MarkdownArticle {
     /// The section boundaries still come from Markdown headings; this only adds
     /// the layout wrappers needed by the existing About presentation.
     pub fn render_about(&self) -> String {
-        self.render_markdown(true)
+        let headings = self.headings();
+        self.render_markdown_with_headings(true, &headings)
     }
 
-    // The render_markdown and try_rewrite_assets_link functions remain the
-    // same. They are not directly affected by the CSS framework change.
+    /// Render one Markdown fragment using heading IDs allocated by the parent
+    /// document.  Rich Markdown uses this to keep duplicate heading suffixes
+    /// stable even when directives split one article into several fragments.
+    pub fn render_fragment(&self, headings: &[MarkdownHeading]) -> String {
+        self.render_markdown_with_headings(false, headings)
+    }
+
     fn render_markdown(&self, wrap_about_sections: bool) -> String {
+        let headings = self.headings();
+        self.render_markdown_with_headings(wrap_about_sections, &headings)
+    }
+
+    fn render_markdown_with_headings(
+        &self,
+        wrap_about_sections: bool,
+        headings: &[MarkdownHeading],
+    ) -> String {
         let mut html_output = String::new();
         let mut in_code_block = false;
         let mut lang = String::new();
         let mut iterator = Vec::new();
         let section_ids = if wrap_about_sections {
-            self.headings()
-                .into_iter()
+            headings
+                .iter()
                 .filter(|heading| heading.level == 2)
-                .map(|heading| heading.id)
+                .map(|heading| heading.id.clone())
                 .collect::<Vec<_>>()
         } else {
             Vec::new()
@@ -210,27 +225,19 @@ impl MarkdownArticle {
         }
 
         html::push_html(&mut html_output, iterator.into_iter());
-        let headings = self.headings();
-        let html_output = inject_heading_ids(html_output, &headings);
+        let html_output = inject_heading_ids(html_output, headings);
+        let html_output = inject_heading_kickers(html_output);
 
         format!(r#"<div class="markdown-body">{html_output}</div>"#)
     }
 
     fn try_rewrite_assets_link(&self, link: &str) -> Option<String> {
-        // For now, use a hardcoded site config that matches the expected
-        // structure In a real implementation, this would use the site
-        // context
         let site_config = SITE_CONFIGURATION
             .get()
             .expect("Site configuration should be loaded by AppLayout");
-        let assets_re = web_sys::js_sys::RegExp::new(r"\/\$ASSETS\/(.+)", "i");
-        let assets_match = assets_re.exec(link);
-        if let Some(m) = assets_match {
-            // Replace $ASSETS with the actual assets URL
-            let asset_path = m.get(1).as_string();
-            if let Some(asset_path) = asset_path {
-                // Rewrite the URL to point to the assets directory
-                return Some(site_config.article_asset_url(&self.id, &asset_path));
+        if let Some((_, asset_path)) = link.split_once("$ASSETS/") {
+            if !asset_path.is_empty() {
+                return Some(site_config.resolve_article_asset(&self.id, asset_path));
             }
         }
         None
@@ -281,6 +288,42 @@ fn inject_heading_ids(mut html: String, headings: &[MarkdownHeading]) -> String 
     html
 }
 
+fn inject_heading_kickers(mut html: String) -> String {
+    const MARKER: &str = "<!-- kicker:";
+    let mut search_start = 0;
+
+    while let Some(relative_start) = html[search_start..].find(MARKER) {
+        let start = search_start + relative_start;
+        let Some(relative_end) = html[start..].find("-->") else {
+            break;
+        };
+        let end = start + relative_end;
+        let kicker = html[start + MARKER.len()..end].trim();
+        if kicker.is_empty() {
+            search_start = end + 3;
+            continue;
+        }
+
+        let replacement = format!(
+            r#"<span class="markdown-heading-kicker">{}</span>"#,
+            escape_html(kicker)
+        );
+        html.replace_range(start..end + 3, &replacement);
+        search_start = start + replacement.len();
+    }
+
+    html
+}
+
+fn escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 impl From<MarkdownArticle> for String {
     fn from(val: MarkdownArticle) -> Self {
         val.render_markdown(false)
@@ -327,5 +370,18 @@ mod tests {
         )
         .into();
         assert!(!regular_html.contains("about-section"));
+    }
+
+    #[test]
+    fn markdown_heading_kicker_markers_render_as_themeable_labels() {
+        let html: String = MarkdownArticle::new(
+            "<!-- kicker: DATA · GENERATED -->\n\n## 录取数据分析".to_string(),
+            "home".to_string(),
+        )
+        .into();
+
+        assert!(html.contains(r#"<span class="markdown-heading-kicker">DATA · GENERATED</span>"#));
+        assert!(html.contains(r#"<h2 id="录取数据分析">录取数据分析</h2>"#));
+        assert!(!html.contains("<!-- kicker:"));
     }
 }

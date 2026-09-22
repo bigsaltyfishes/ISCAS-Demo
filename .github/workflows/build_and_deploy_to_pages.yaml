@@ -11,7 +11,7 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  PUBLIC_URL: "https://blog.ruruka.moe/"
+  PUBLIC_URL: "https://iscas-demo.ruruka.moe/"
 
 jobs:
   build:

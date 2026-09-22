@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Molyuu Blog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100..900&display=swap" rel="stylesheet">
+    <base href="https://iscas-demo.ruruka.moe/" />
+    
+    
+    
+    
+    
+    <link rel="stylesheet" href="https://iscas-demo.ruruka.moe/styles-4498d7f19e2704c3.css" integrity="sha384-ty65tu2D6HPQn2eQjDQdyhzpcoYV8slS4k1ucYnhTmJ1uM82Yt2S7luC7gB+a2yM"/>
+    <!-- Start Single Page Apps for GitHub Pages -->
+    <script type="text/javascript">
+        // Single Page Apps for GitHub Pages
+        // MIT License
+        // https://github.com/rafgraph/spa-github-pages
+        // This script checks to see if a redirect is present in the query string,
+        // converts it back into the correct url and adds it to the
+        // browser's history using window.history.replaceState(...),
+        // which won't cause the browser to attempt to load the new url.
+        // When the single page app is loaded further down in this file,
+        // the correct url will be waiting in the browser's history for
+        // the single page app to route accordingly.
+        (function (l) {
+            if (l.search[1] === '/') {
+                var decoded = l.search.slice(1).split('&').map(function (s) {
+                    return s.replace(/~and~/g, '&')
+                }).join('?');
+                window.history.replaceState(null, null,
+                    l.pathname.slice(0, -1) + decoded + l.hash
+                );
+            }
+        }(window.location))
+    </script>
+    <!-- End Single Page Apps for GitHub Pages -->
+<link rel="modulepreload" href="https://iscas-demo.ruruka.moe/molyuu-blog-e7d97dc4b76a83b2.js" crossorigin="anonymous" integrity="sha384-pyGLS/l9QLpmwF9Oz+E78VxOBLlzQlnMwJ4UOQDfybujXoRiDlLVMzYOLKGzM8XJ"><link rel="modulepreload" href="https://iscas-demo.ruruka.moe/snippets/katex-wasmbind-7707889cb7431c34/src/katex.min.js" crossorigin="anonymous" integrity="sha384-4Tgn9rYJEoNgHEolmqfOnbQRcbdwtAZggO3Fj/9T39bbQQZNCv51+t/MVTi046FU"><link rel="modulepreload" href="https://iscas-demo.ruruka.moe/snippets/molyuu-blog-e3ab9bce37fa65c7/src/scripts/highlighter.js" crossorigin="anonymous" integrity="sha384-g4a8XcNvs4ed2WjCqHj0KrOhW4M22qoorsw/8m0yZByoXH6j9oMeJqKyiOhNm98s"><link rel="preload" href="https://iscas-demo.ruruka.moe/molyuu-blog-31827661a5451d3e_bg.wasm" crossorigin="anonymous" integrity="sha384-fRTRL2h2phqaHH8gEbx2ShLNbLcAVGUcjN4hYpgnvTzdL9sexTlZxztmEdrxS2l3" as="fetch" type="application/wasm"></head>
+
+<body>
+    
+<script type="module">
+import init, * as bindings from 'https://iscas-demo.ruruka.moe/molyuu-blog-e7d97dc4b76a83b2.js';
+
+const resp = await fetch('https://iscas-demo.ruruka.moe/molyuu-blog-31827661a5451d3e_bg.wasm');
+if (!resp.ok) {
+    throw new Error('Failed to fetch WASM module: ' + resp.statusText);
+}
+
+const decompressStream = resp.body.pipeThrough(new DecompressionStream('gzip'));
+const wasmBytes = await new Response(decompressStream).arrayBuffer();
+                
+const wasm = await init({ module_or_path: wasmBytes });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script>
+</body>
+
+</html>
